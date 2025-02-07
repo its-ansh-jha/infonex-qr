@@ -1,23 +1,27 @@
-name: Extract ZIP in Repo
+name: Extract ZIP and Commit Back
 
 on:
   push:
     branches:
-      - main  # Change 'main' to your default branch if different
+      - main  # Change if your default branch is different
 
 jobs:
-  extract:
+  extract_zip:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+        with:
+          persist-credentials: false
 
       - name: Extract ZIP File
         run: |
-          unzip website.zip -d extracted
-          mv extracted/* .
-          rm -rf extracted website.zip
+          sudo apt-get install unzip
+          unzip -o website.zip -d extracted
+          cp -r extracted/* .
+          rm -rf extracted
+          sudo rm -f website.zip  # Use sudo to remove ZIP
 
       - name: Commit Extracted Files
         run: |
@@ -25,4 +29,7 @@ jobs:
           git config --global user.email "actions@github.com"
           git add .
           git commit -m "Extracted ZIP files"
-          git push
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
